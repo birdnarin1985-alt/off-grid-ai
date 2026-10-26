@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - Living PRO GPU Pixel Engine</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        canvas {
+            display: block;
+            background-color: #000000;
+            box-shadow: 0 0 50px rgba(13, 243, 150, 0.2);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="livingGpuCore"></canvas>
+
+<script>
+    // ========================================================
+    // 🏛️ 1. CPU INITIALIZATION & PULSE PARAMETERS (ขั้นปฏิสนธิและตั้งค่าชีพจร)
+    // ========================================================
+    const canvas = document.getElementById('livingGpuCore');
+    const ctx = canvas.getContext('2d');
+
+    const V_WIDTH = 420;
+    const V_HEIGHT = 740;
+
+    // สถานะระบบควบคุมภายใน (Global State Ledger)
+    let currentTab = 'Home'; 
+    let modelTemperature = 0.7;
+    let selectedQuant = "Q8_0"; 
+    let ollamaActive = false;
+    let aiResponseText = "ระบบตื่นรู้เสร็จสิ้น สัญญาณชีพจรไหลเวียนผ่าน Math.sin บนคอร์ GPU ตลอดเวลา";
+    
+    let telemetryLogs = ["[BOOT] CPU initialized core hardware state.", "[PULSE] Sine-wave engine attached to RAF loop."];
+    const clickTargets = []; 
+
+    let localProjects = [
+        { title: "Thai Legal Docs Translation", files: 12, desc: "สกัดและแปลข้อความกฎหมายออฟไลน์" },
+        { title: "Data Sorting Pipeline", files: 4, desc: "จัดหมวดหมู่ไฟล์ผลสำรวจประจำภูมิภาค" }
+    ];
+
+    // ตัวแปรควบคุมชีพจร (Time/Pulse Factor) สำหรับสร้างความไหวติงในธาตุ 4 ขันธ์ 5
+    let pulseTime = 0;
+
+    // ========================================================
+    // 🎨 2. CONTINUOUS GPU RENDERING LOOP (ลูปสัญญาณชีพจรไหลเวียน)
+    // ========================================================
+    function pulseEngineLoop() {
+        // เพิ่มเวลาในแต่ละเฟรมเพื่อขับเคลื่อน Math.sin (ความเร็วของชีพจร)
+        pulseTime += 0.04; 
+        
+        // คำนวณค่ากะพริบวูบวาบจากคลื่นไซน์ให้อยู่ในขอบเขต 0.3 ถึง 1.0 (ความสว่างของลมหายใจ)
+        const pulseAlpha = 0.65 + Math.sin(pulseTime) * 0.35;
+        const glowFactor = 10 + Math.sin(pulseTime) * 6; // ขนาดของออร่าที่ขยายและหดตัว
+
+        // เคลียร์พื้นหลังพิกเซลบนเฟรมเรนเดอร์ GPU
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        clickTargets.length = 0; 
+
+        // --- DRAW HEADER MESH WITH PULSE ---
+        // สัญญาณไฟสีเขียวมินต์จะกะพริบตามชีพจรของ Math.sin
+        ctx.fillStyle = `rgba(13, 243, 150, ${pulseAlpha})`;
+        ctx.fillRect(24, 25, 18, 18);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(28, 29, 10, 10);
+        ctx.fillStyle = `rgba(13, 243, 150, ${pulseAlpha})`;
+        ctx.fillRect(31, 32, 4, 4);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px -apple-system, sans-serif';
+        ctx.fillText('Off Grid AI', 52, 41);
+
+        // ป้ายสัญลักษณ์ PRO VERSION กะพริบแบบนุ่มนวลสไตล์พรีเมียม
+        ctx.fillStyle = `rgba(13, 243, 150, ${0.05 + pulseAlpha * 0.1})`;
+        ctx.fillRect(24, 52, 135, 18);
+        ctx.fillStyle = `rgba(13, 243, 150, ${0.4 + pulseAlpha * 0.6})`;
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('PRO VERSION UNLOCKED', 32, 64);
+
+        ctx.fillStyle = '#ffd60a'; 
+        ctx.font = '18px -apple-system';
+        ctx.fillText('👑', V_WIDTH - 42, 40);
+
+        // --- VIEWPORT ROUTER MAPPING ---
+        const viewRenderMatrix = {
+            'Home': () => drawHomeGpuLayer(pulseAlpha, glowFactor),
+            'Chats': () => drawChatsGpuLayer(pulseAlpha),
+            'Projects': drawProjectsGpuLayer(),
+            'Settings': () => drawSettingsGpuLayer(pulseAlpha)
+        };
+        
+        if (viewRenderMatrix[currentTab]) {
+            viewRenderMatrix[currentTab]();
+        }
+
+        // --- DIAGNOSTICS MONITOR (ส่วนแสดง Log ระบบแอป) ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, V_HEIGHT - 195, V_WIDTH - 40, 100);
+        ctx.strokeRect(20, V_HEIGHT - 195, V_WIDTH - 40, 100);
+
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '10px monospace';
+        ctx.fillText('Neural Engine Diagnostics (PRO MODE)', 26, V_HEIGHT - 202);
+
+        // ตัวอักษรล็อกแสดงชีพจรแบบ Real-time
+        ctx.fillStyle = '#0df396';
+        let logY = V_HEIGHT - 180;
+        telemetryLogs.slice(-4).forEach(log => {
+            ctx.fillText(log, 30, logY);
+            logY += 16;
+        });
+        ctx.fillStyle = '#8e8e93';
+        ctx.fillText(`[PULSE_VECTOR] Sine value: ${Math.sin(pulseTime).toFixed(4)}`, 30, logY);
+
+        // --- BOTTOM NAVIGATION BAR MESH ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(0, V_HEIGHT - 75, V_WIDTH, 75);
+        ctx.beginPath();
+        ctx.moveTo(0, V_HEIGHT - 75);
+        ctx.lineTo(V_WIDTH, V_HEIGHT - 75);
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.stroke();
+
+        const tabs = [
+            { id: 'Home', icon: '🏠' },
+            { id: 'Chats', icon: '💬' },
+            { id: 'Projects', icon: '📁' },
+            { id: 'Settings', icon: '⚙️' }
+        ];
+        const segWidth = V_WIDTH / tabs.length;
+
+        tabs.forEach((t, i) => {
+            const x = i * segWidth;
+            const isSelected = currentTab === t.id;
+
+            // แท็บที่เลือกจะได้รับการส่งกระแสไฟฟ้ากะพริบตามชีพจรเบาๆ
+            ctx.fillStyle = isSelected ? `rgba(13, 243, 150, ${0.7 + pulseAlpha * 0.3})` : '#8e8e93';
+            ctx.font = '20px -apple-system';
+            ctx.fillText(t.icon, x + (segWidth/2) - 10, V_HEIGHT - 42);
+            ctx.font = '9px -apple-system';
+            ctx.fillText(t.id, x + (segWidth/2) - (ctx.measureText(t.id).width / 2), V_HEIGHT - 24);
+
+            mapClickBox(x, V_HEIGHT - 75, segWidth, 75, () => {
+                currentTab = t.id;
+                pushLog(`[NAV] Routed viewport perspective to: ${t.id}`);
+            });
+        });
+
+        // สั่งให้ GPU วาดเฟรมถัดไปอย่างต่อเนื่องไม่สิ้นสุด (ดับเหตุแห่งหน้าจอมืดตึ๊บถาวร)
+        requestAnimationFrame(pulseEngineLoop);
+    }
+
+    // ========================================================
+    // 🎭 3. INDIVIDUAL LAYERS WITH PULSE EFFECT
+    // ========================================================
+    function drawHomeGpuLayer(pulseAlpha, glowFactor) {
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 95, V_WIDTH - 40, 60);
+        ctx.strokeRect(20, 95, V_WIDTH - 40, 60);
+
+        ctx.fillStyle = '#0df396';
+        ctx.font = '12px -apple-system';
+        ctx.fillText(`💬 Text: ${selectedQuant}`, 34, 131);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('🖼️ Vision: Active', 150, 131);
+        ctx.fillText('🔊 Audio: Unlocked', 275, 131);
+
+        // ปุ่มยักษ์ New Chat ครอบเส้นสปอร์ตเรืองแสงตามชีพจร Math.sin
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(20, 175, V_WIDTH - 40, 48);
+        ctx.strokeStyle = `rgba(13, 243, 150, ${pulseAlpha})`;
+        ctx.lineWidth = 1 + pulseAlpha;
+        ctx.strokeRect(20, 175, V_WIDTH - 40, 48);
+        ctx.lineWidth = 1; // คืนค่าปกติ
+        
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 14px -apple-system';
+        ctx.fillText('New Chat (Unlimited Context Sandbox)', V_WIDTH/2 - 115, 204);
+
+        mapClickBox(20, 175, V_WIDTH - 40, 48, () => {
+            currentTab = 'Chats';
+            executeHardwareInference("เปิดห้องแชทใหม่รุ่นโปร");
+        });
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 242, V_WIDTH - 40, 120);
+        ctx.strokeRect(20, 242, V_WIDTH - 40, 120);
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '11px -apple-system';
+        ctx.fillText('🤖 คำตอบโต้ตอบล่าสุด (On-Device):', 34, 268);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px -apple-system';
+        gpuTextWrap(aiResponseText, 34, 296, V_WIDTH - 68, 18);
+    }
+
+    function drawChatsGpuLayer(pulseAlpha) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Interactive Chats Room', 24, 110);
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = `rgba(26, 26, 28, ${pulseAlpha})`;
+        ctx.fillRect(20, 135, V_WIDTH - 40, 95);
+        ctx.strokeRect(20, 135, V_WIDTH - 40, 95);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px -apple-system';
+        ctx.fillText('👉 สัมผัสปุ่มนี้เพื่อส่งคำสั่ง "เช็ก System Status ให้ฉันหน่อย"', 36, 172);
+        ctx.fillStyle = '#0df396';
+        ctx.font = '11px monospace';
+        ctx.fillText(`[PARAM] Temp: ${modelTemperature.toFixed(1)} | Precision: ${selectedQuant}`, 36, 200);
+
+        mapClickBox(20, 135, V_WIDTH - 40, 95, () => {
+            executeHardwareInference("เช็ก System Status ให้ฉันหน่อย");
+        });
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(20, 250, V_WIDTH - 40, 115);
+        ctx.strokeRect(20, 250, V_WIDTH - 40, 115);
+        ctx.fillStyle = '#0df396';
+        ctx.font = '12px -apple-system';
+        ctx.fillText('🤖 Voice Audio Output:', 34, 275);
+        ctx.fillStyle = '#ffffff';
+        gpuTextWrap(aiResponseText, 34, 302, V_WIDTH - 68, 18);
+    }
+
+    function drawProjectsGpuLayer() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Projects Ledger', 24, 110);
+
+        ctx.fillStyle = '#1c1c1e';
+        ctx.fillRect(V_WIDTH - 135, 90, 115, 26);
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 11px -apple-system';
+        ctx.fillText('+ Create Project', V_WIDTH - 120, 107);
+        mapClickBox(V_WIDTH - 135, 90, 115, 26, () => {
