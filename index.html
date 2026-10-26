@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - PRO Perfect DOM-Mapping Core</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #0d0d0e;
+            --border-color: #1a1a1c;
+            --accent-color: #0df396; /* เขียวมินต์สะท้อนแสง */
+            --pro-gold: #ffd60a;      /* ทองสิทธิ์โปร VIP */
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --toggle-bg: #1c1c1e;
+            --input-bg: #151517;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0; padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* กรอบสมาร์ทโฟน/แท็บเล็ตจำลองสไตล์ Apple Interface */
+        .app-shell {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px 95px 16px; /* เว้นระยะไม่ให้บังปุ่มเมนูด้านล่าง */
+        }
+
+        /* --- GPU ACCELERATED STAGE VIEWPORT --- */
+        .stage-viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
+            transform: translate3d(24px, 0, 0);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate3d(0, 0, 0);
+        }
+
+        /* --- UI STYLING COMPONENTS --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; }
+        .brand-icon { width: 24px; height: 24px; border: 2px solid var(--accent-color); border-radius: 5px; position: relative; }
+        .brand-icon::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; background-color: var(--accent-color); border-radius: 1px; }
+        .pro-badge { background-color: rgba(13, 243, 150, 0.15); border: 1px solid var(--accent-color); color: var(--accent-color); font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-top: 2px; }
+        .crown { color: var(--pro-gold); font-size: 18px; }
+
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+        .card-header-text { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+        
+        .models-grid { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; }
+        .model-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+        .model-val { color: var(--accent-color); font-size: 16px; font-weight: bold; font-family: monospace; }
+        .model-lbl { font-size: 11px; color: var(--text-muted); }
+
+        .btn-action { width: 100%; background-color: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 500; cursor: pointer; margin-bottom: 14px; text-align: center; }
+        .btn-action:active { background-color: rgba(13, 243, 150, 0.05); }
+
+        .recent-item { background-color: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .recent-left h4 { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+        .recent-left p { font-size: 12px; color: var(--text-muted); }
+
+        /* Settings Sub-view UI */
+        .back-btn { color: var(--accent-color); cursor: pointer; font-size: 14px; margin-bottom: 12px; display: inline-block; }
+        h1 { font-size: 28px; font-weight: 600; margin-bottom: 16px; }
+        .slider-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
+        .slider-ui { width: 100%; -webkit-appearance: none; background: var(--toggle-bg); height: 6px; border-radius: 3px; outline: none; margin: 8px 0; }
+        .slider-ui::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #ffffff; cursor: pointer; }
+
+        .segment-control { background-color: var(--toggle-bg); padding: 2px; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+        .segment-btn { background: transparent; border: none; color: var(--text-muted); padding: 6px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .segment-btn.active { background-color: var(--accent-color); color: #000000; }
+
+        /* Chat Window View */
+        .chat-box { flex: 1; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 10px; display: flex; flex-direction: column; overflow: hidden; background-color: rgba(255,255,255,0.01); }
+        .chat-scroller { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 85%; padding: 10px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.4; }
+        .bubble.ai { align-self: flex-start; background-color: var(--card-bg); border: 1px solid var(--border-color); border-left: 2px solid var(--accent-color); border-bottom-left-radius: 4px; }
+        .bubble.user { align-self: flex-end; background-color: var(--toggle-bg); border: 1px solid var(--border-color); border-bottom-right-radius: 4px; }
+        .voice-trigger-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; background: rgba(13, 243, 150, 0.1); border: 1px solid rgba(13, 243, 150, 0.2); color: var(--accent-color); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+        .chat-input-row { display: flex; gap: 6px; }
+        .chat-input { flex: 1; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: #ffffff; padding: 10px; font-size: 13.5px; }
+        .chat-input:focus { outline: none; border-color: var(--accent-color); }
+        .btn-send { background-color: var(--accent-color); color: #000; border: none; padding: 0 14px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+        /* --- SYSTEM MONITOR TERMINAL --- */
+        .terminal-box { background-color: #050505; border-radius: 10px; border: 1px dashed var(--border-color); padding: 10px; font-family: monospace; font-size: 11px; color: var(--accent-color); height: 85px; overflow-y: auto; margin-top: auto; line-height: 1.4; }
+
+        /* --- BOTTOM NAVIGATION BAR --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background-color: rgba(13, 13, 14, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 0 18px 0; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; }
+        .nav-item.active { color: var(--accent-color); }
+        .nav-icon { font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <div class="stage-viewport">
+        
+        <!-- 🏠 HOME VIEW (ส่องสว่างด้วยโครงสร้าง DOM เสถียร) -->
+        <div class="view active" id="view-Home">
+            <div class="header">
+                <div class="brand-wrapper"><div class="brand"><div class="brand-icon"></div><span id="txt-brandName"></span></div><div class="pro-badge" id="txt-proBadge"></div></div>
+                <div class="crown">👑</div>
+            </div>
+            <div class="card">
+                <div class="card-header-text" id="txt-modelsHeader"></div>
+                <div class="models-grid">
+                    <div class="model-item"><div class="model-val" id="txt-mText">💬 Q8_0</div><div class="model-lbl">Text</div></div>
+                    <div class="model-item"><div class="model-val">🖼️ 1</div><div class="model-lbl">Vision</div></div>
+                    <div class="model-item"><div class="model-val">🔊 1</div><div class="model-lbl">Audio</div></div>
+                    <div class="model-item"><div class="model-val">🎙️ 1</div><div class="model-lbl">Speech</div></div>
+                </div>
+            </div>
+            <button class="btn-action" id="txt-btnNewChat" onclick="routeTo('Chats')"></button>
+            <div class="card">
+                <div class="pro-active-title" style="margin-bottom:4px;" id="txt-syncTitle"></div>
+                <div class="pro-desc" style="font-size:12.5px; color:var(--text-muted); line-height:1.4; margin-bottom:10px;" id="txt-syncDesc"></div>
+                <button class="btn-action" style="padding:8px; font-size:13px; margin-bottom:0;" id="txt-btnSync" onclick="executeSync()"></button>
+            </div>
+            <div class="recent-item" onclick="routeTo('Chats')">
