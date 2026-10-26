@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - PRO Full Canvas Pixel Engine</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            background-color: #000000;
+            box-shadow: 0 0 30px rgba(13, 243, 150, 0.08);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="offGridEngine"></canvas>
+
+<script>
+    // ========================================================
+    // 💡 STATE REGISTRY & CORE MAPS (แกนหลักศูนย์รวมธรรมฐิติ)
+    // ========================================================
+    const canvas = document.getElementById('offGridEngine');
+    const ctx = canvas.getContext('2d');
+
+    const V_WIDTH = 420;
+    const V_HEIGHT = 740;
+
+    // สถานะส่วนกลางของแอปพลิเคชัน (Global Application States)
+    let currentTab = 'Home'; // Home, Chats, Projects, Settings
+    let aiResponseText = "ระบบออฟไลน์โปรโมดพร้อมใช้งาน 100% ปลอดภัยไร้คลาวด์ครอบงำ";
+    
+    // พารามิเตอร์โมเดลที่ผูกมัดเชื่อมโยงกันจริง (Model Hyperparameters)
+    let modelTemperature = 0.7;
+    let selectedQuant = "Q8_0"; // Q4_K, Q8_0, FP16
+    let contextLength = 4096;
+    let ollamaBridgeActive = false;
+
+    let logs = ["[SYSTEM] WebGL/Canvas Pixel Matrix Initialized.", "[PRO] Unlimited token context armed."];
+    const clickTargets = [];
+
+    // จำลองรายการโปรเจกต์ในคลังข้อมูล
+    let localProjects = [
+        { title: "Thai Legal Docs Translation", files: 12, desc: "สกัดและแปลข้อมูลกฎหมายออฟไลน์" },
+        { title: "Data Classification Model", files: 4, desc: "จัดหมวดหมู่ไฟล์ผลสำรวจภูมิภาค" }
+    ];
+
+    // ========================================================
+    // 🎨 MAIN RENDERING LOOP (การเกาพิกเซลลงผืนผ้าใบแบบเรียลไทม์)
+    // ========================================================
+    function renderSystemFrame() {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        clickTargets.length = 0; // เคลียร์พิกเซลตำแหน่งกดในเฟรมนี้
+
+        // --- 1. GLOBAL HEADER BAR ---
+        ctx.fillStyle = '#0df396'; // เขียวมินต์สะท้อนแสง
+        ctx.fillRect(20, 25, 18, 18);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(24, 29, 10, 10);
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(27, 32, 4, 4);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px -apple-system, sans-serif';
+        ctx.fillText('Off Grid AI', 48, 41);
+
+        ctx.fillStyle = 'rgba(13, 243, 150, 0.12)';
+        ctx.fillRect(20, 52, 140, 20);
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillText('PRO VERSION UNLOCKED', 28, 65);
+
+        ctx.fillStyle = '#ffd60a'; // มงกุฎทองสิทธิ์โปร VIP
+        ctx.font = '18px -apple-system';
+        ctx.fillText('👑', V_WIDTH - 42, 42);
+
+        // --- 2. SWITCH VIEW LAYER (Dictionary Mapping ของแต่ละหน้าจอ)
+        const viewGroupRouter = {
+            'Home': drawHomeView,
+            'Chats': drawChatsView,
+            'Projects': drawProjectsView,
+            'Settings': drawSettingsView
+        };
+        if (viewGroupRouter[currentTab]) {
+            viewGroupRouter[currentTab]();
+        }
+
+        // --- 3. TELEMETRY DIAGNOSTICS MONITOR (ส่วนแสดง Log ระบบแอป)
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, V_HEIGHT - 200, V_WIDTH - 40, 105);
+        ctx.strokeRect(20, V_HEIGHT - 200, V_WIDTH - 40, 105);
+
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '11px monospace';
+        ctx.fillText('Neural Engine Diagnostics (PRO MODE)', 26, V_HEIGHT - 208);
+
+        ctx.fillStyle = '#0df396';
+        let logY = V_HEIGHT - 184;
+        logs.slice(-5).forEach(log => {
+            ctx.fillText(log, 30, logY);
+            logY += 16;
+        });
+
+        // --- 4. BOTTOM NAVIGATION BAR ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(0, V_HEIGHT - 75, V_WIDTH, 75);
+        ctx.beginPath();
+        ctx.moveTo(0, V_HEIGHT - 75);
+        ctx.lineTo(V_WIDTH, V_HEIGHT - 75);
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.stroke();
+
+        const tabs = [
+            { name: 'Home', icon: '🏠' },
+            { name: 'Chats', icon: '💬' },
+            { name: 'Projects', icon: '📁' },
+            { name: 'Settings', icon: '⚙️' }
+        ];
+        const tabWidth = V_WIDTH / tabs.length;
+
+        tabs.forEach((tab, index) => {
+            const x = index * tabWidth;
+            const isActive = currentTab === tab.name;
+
+            ctx.fillStyle = isActive ? '#0df396' : '#8e8e93';
+            ctx.font = '20px -apple-system';
+            ctx.fillText(tab.icon, x + (tabWidth/2) - 10, V_HEIGHT - 42);
+            
+            ctx.font = '10px -apple-system';
+            ctx.fillText(tab.name, x + (tabWidth/2) - (ctx.measureText(tab.name).width / 2), V_HEIGHT - 24);
+
+            registerClickZone(x, V_HEIGHT - 75, tabWidth, 75, () => {
+                currentTab = tab.name;
+                pushKernelLog(`[ROUTER] View changed to -> ${tab.name}`);
+                renderSystemFrame();
+            });
+        });
+    }
+
+    // ========================================================
+    // 🏠 VIEW RENDER DETAILED (ฟังก์ชันย่อยการจัดแต่งพิกเซล)
+    // ========================================================
+    
+    function drawHomeView() {
+        // แผงแสดงโมเดลพารามิเตอร์ GGUF Unlocked Card
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 95, V_WIDTH - 40, 65);
+        ctx.strokeRect(20, 95, V_WIDTH - 40, 65);
+
+        ctx.fillStyle = '#0df396';
+        ctx.font = '13px -apple-system';
+        ctx.fillText(`💬 Text: ${selectedQuant}`, 35, 133);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('🖼️ Img: Active', 140, 133);
+        ctx.fillText('🔊 Voice: On', 235, 133);
+        ctx.fillText('🎙️ Speech: On', 325, 133);
+
+        // ปุ่มยักษ์อินเตอร์เฟซ New Chat
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(20, 175, V_WIDTH - 40, 48);
+        ctx.strokeStyle = '#0df396';
+        ctx.strokeRect(20, 175, V_WIDTH - 40, 48);
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 14px -apple-system';
+        ctx.fillText('New Chat (Unlimited Context Tokens)', V_WIDTH/2 - 110, 204);
+
+        registerClickZone(20, 175, V_WIDTH - 40, 48, () => {
+            currentTab = 'Chats';
+            executeMockInference("เปิดห้องแชทใหม่ในสิทธิ์โปร");
+            renderSystemFrame();
+        });
+
+        // บล็อกข้อความตอบกลับล่าสุด
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 240, V_WIDTH - 40, 120);
+        ctx.strokeRect(20, 240, V_WIDTH - 40, 120);
+        
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '12px -apple-system';
+        ctx.fillText('🤖 โต้ตอบล่าสุดออฟไลน์:', 35, 265);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px -apple-system';
+        wrapTextThai(aiResponseText, 35, 295, V_WIDTH - 70, 20);
+    }
+
+    function drawChatsView() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Chats Interface Room', 24, 110);
+
+        // บล็อกปุ่มกดส่งสัญญานอินเฟอเรนซ์จำลองคำสั่ง
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 135, V_WIDTH - 40, 100);
+        ctx.strokeRect(20, 135, V_WIDTH - 40, 100);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px -apple-system';
+        ctx.fillText('👉 คลิกตรงนี้เพื่อส่งคำสั่ง "เช็ก System Status ให้ฉันหน่อย"', 35, 175);
+        ctx.fillStyle = '#0df396';
+        ctx.font = '11px monospace';
+        ctx.fillText(`[PARAM] Temp: ${modelTemperature} | Quant: ${selectedQuant}`, 35, 205);
+
+        registerClickZone(20, 135, V_WIDTH - 40, 100, () => {
+            executeMockInference("เช็ก System Status ให้ฉันหน่อย");
+            renderSystemFrame();
+        });
+
+        // แสดงกล่องแชทโต้ตอบ
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(20, 250, V_WIDTH - 40, 110);
+        ctx.strokeRect(20, 250, V_WIDTH - 40, 110);
+        ctx.fillStyle = '#0df396';
+        ctx.font = '12px -apple-system';
+        ctx.fillText('🤖 Off Grid AI PRO Voice Synth Output:', 35, 275);
+        ctx.fillStyle = '#ffffff';
+        wrapTextThai(aiResponseText, 35, 305, V_WIDTH - 70, 18);
+    }
+
+    function drawProjectsView() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Projects Ledger', 24, 110);
+
+        // ปุ่มบวกโปรเจกต์สดๆ
+        ctx.fillStyle = '#1c1c1e';
+        ctx.fillRect(V_WIDTH - 140, 90, 120, 28);
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 12px -apple-system';
+        ctx.fillText('+ Create Project', V_WIDTH - 125, 108);
+        registerClickZone(V_WIDTH - 140, 90, 120, 28, () => {
+            const randId = Math.floor(Math.random() * 900) + 100;
+            localProjects.unshift({ title: `AI_Secure_Project_${randId}`, files: 1, desc: "จัดตั้ง Sandbox โฟลเดอร์ระดับโปรใหม่" });
+            pushKernelLog(`[PROJECT] Created sandbox package: ID ${randId}`);
+            renderSystemFrame();
+        });
+
+        // ลูปวาดรายการไฟล์โปรเจกต์ตามสเปกของคลังข้อมูลจริง
+        let boxY = 135;
+        localProjects.forEach(proj => {
+            ctx.fillStyle = '#0d0d0e';
+            ctx.strokeStyle = '#1a1a1c';
+            ctx.fillRect(20, boxY, V_WIDTH - 40, 65);
+            ctx.strokeRect(20, boxY, V_WIDTH - 40, 65);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px -apple-system';
+            ctx.fillText(`📂 ${proj.title}`, 35, boxY + 25);
+
