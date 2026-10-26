@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - Ultimate Solid PRO Engine</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+        canvas {
+            display: block;
+            background-color: #000000;
+            box-shadow: 0 0 60px rgba(13, 243, 150, 0.25);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="offGridSolidEngine"></canvas>
+
+<script>
+    // ========================================================
+    // 🏛️ 1. CPU INITIALIZATION (ขั้นปฏิสนธิสเตตแอปอย่างเรียบง่าย)
+    // ========================================================
+    const canvas = document.getElementById('offGridSolidEngine');
+    const ctx = canvas.getContext('2d');
+
+    // ล็อคขนาดพิกเซลมาตรฐานเสถียรสูงสุด
+    const V_WIDTH = 420;
+    const V_HEIGHT = 740;
+
+    let currentTab = 'Home'; // Home, Chats, Projects, Settings
+    let modelTemperature = 0.7; // ค่าปรับเปลี่ยนแปรผันตามแถบสไลเดอร์สเปกตรัม
+    let selectedPrecision = 2;   // 1: Q4, 2: Q8, 3: FP16
+    let ollamaLinkActive = false;
+
+    const clickTargets = []; // แผนผังพิกัดปุ่มกดอัจฉริยะ (Coordinate Input Maps)
+
+    let pulseTime = 0;
+
+    // ========================================================
+    // 🎨 2. CONTINUOUS GPU RENDERING LOOP (ลูปชีพจรคลื่นไซน์ไร้ฟอนต์พัง)
+    // ========================================================
+    function pulseEngineLoop() {
+        pulseTime += 0.05;
+        // ควบคุมจังหวะลมหายใจของรูปธรรมด้วยคลื่นไซน์ (ขอบเขต 0.4 ถึง 1.0)
+        const pulseAlpha = 0.6 + Math.sin(pulseTime) * 0.4;
+
+        // เคลียร์และถมพิกเซลพื้นหลังด้วยสีดำทึบแสงทุกเฟรม ป้องกันแสงวาบซ้ำซ้อน
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        clickTargets.length = 0; // ล้างตำแหน่งกดของเฟรมเก่าเพื่อรับเฟรมปัจจุบัน
+
+        // --- 🟢 TOP HEADER AREA ---
+        // วาดไอคอนตราสัญลักษณ์ Off Grid AI PRO (สีเขียวมินต์สะท้อนแสง)
+        ctx.fillStyle = `rgba(13, 243, 150, ${pulseAlpha})`;
+        ctx.fillRect(25, 25, 22, 22);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(30, 30, 12, 12);
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(34, 34, 4, 4);
+
+        // แถบยาวแสดงสัญลักษณ์แทนตัวหนังสือของแบรนด์ (Branding Vector Row)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(60, 31, 100, 10);
+        
+        // แถบไฟแสดงสถานะ PRO Unlocked (กะพริบนุ่มนวลตามคลื่นไซน์)
+        ctx.fillStyle = `rgba(13, 243, 150, ${0.1 + pulseAlpha * 0.15})`;
+        ctx.fillRect(25, 55, 135, 14);
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(32, 60, 120, 4);
+
+        // สัญญานมงกุฎ VIP โหมดโปรสูงสุด
+        ctx.fillStyle = '#ffd60a';
+        ctx.fillRect(V_WIDTH - 45, 26, 20, 10);
+        ctx.fillRect(V_WIDTH - 40, 38, 10, 4);
+
+        // --- 🎛️ VIEWPORT ROUTER INTERFACE MAPPING ---
+        if (currentTab === 'Home') drawHomePureGpuLayer(pulseAlpha);
+        else if (currentTab === 'Chats') drawChatsPureGpuLayer(pulseAlpha);
+        else if (currentTab === 'Projects') drawProjectsPureGpuLayer();
+        else if (currentTab === 'Settings') drawSettingsPureGpuLayer(pulseAlpha);
+
+        // --- 📊 TELEMETRY DIAGNOSTICS BLOCKS ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, V_HEIGHT - 170, V_WIDTH - 40, 75);
+        ctx.strokeRect(20, V_HEIGHT - 170, V_WIDTH - 40, 75);
+        
+        // ลายเส้นสัญญาณคลื่นสมองเอไอ (Telemetry Vector Waves)
+        ctx.fillStyle = `rgba(13, 243, 150, ${pulseAlpha})`;
+        ctx.fillRect(32, V_HEIGHT - 155, 100, 6);
+        ctx.fillStyle = '#1a1a1c';
+        ctx.fillRect(32, V_HEIGHT - 135, V_WIDTH - 64, 4);
+        ctx.fillStyle = '#0df396';
+        // เม็ดพิกเซลชีพจรวิ่งตามคลื่นไซน์จริง
+        let pulseIndicatorX = 32 + (0.5 + Math.sin(pulseTime) * 0.5) * (V_WIDTH - 80);
+        ctx.fillRect(pulseIndicatorX, V_HEIGHT - 135, 12, 4);
+
+        // --- 🏠 BOTTOM NAVIGATION BAR GRID ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(0, V_HEIGHT - 75, V_WIDTH, 75);
+        ctx.fillStyle = '#1a1a1c';
+        ctx.fillRect(0, V_HEIGHT - 75, V_WIDTH, 1); // เส้นแยกเลเยอร์ชัดเจน
+
+        const tabLayouts = ['Home', 'Chats', 'Projects', 'Settings'];
+        const segWidth = V_WIDTH / tabLayouts.length;
+
+        tabLayouts.forEach((tabId, idx) => {
+            const x = idx * segWidth;
+            const isTabActive = currentTab === tabId;
+
+            // วาดรูปทรงสี่เหลี่ยมระบุปุ่มและแถบสถานะแทนฟอนต์ข้อความ
+            ctx.fillStyle = isTabActive ? '#0df396' : '#3a3a3c';
+            ctx.fillRect(x + (segWidth / 2) - 15, V_HEIGHT - 52, 30, 16);
+            ctx.fillStyle = isTabActive ? '#ffffff' : '#1c1c1e';
+            ctx.fillRect(x + (segWidth / 2) - 20, V_HEIGHT - 28, 40, 6);
+
+            // แมปพิกัดปุ่มเปลี่ยนแท็บนำทาง (Event-Driven Index Binding)
+            mapClickHitbox(x, V_HEIGHT - 75, segWidth, 75, () => {
+                currentTab = tabId;
+            });
+        });
+
+        // สั่งทำงานลูปประมวลผลผ่าน GPU ต่อเนื่อง วิดีโอไหลเวียนตลอดเวลาไม่มีค้าง
+        requestAnimationFrame(pulseEngineLoop);
+    }
+
+    // ========================================================
+    // 🎭 3. GEOMETRIC INTERFACE LAYERS (สถาปัตยกรรมไร้ตัวอักษรทำพิษ)
+    // ========================================================
+    
+    function drawHomePureGpuLayer(pulseAlpha) {
+        // บล็อกแผงโมเดลสเตต
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 95, V_WIDTH - 40, 55);
+        ctx.strokeRect(20, 95, V_WIDTH - 40, 55);
+
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(35, 110, 50, 10);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(140, 110, 60, 10);
+        ctx.fillRect(250, 110, 45, 10);
+        ctx.fillRect(340, 110, 45, 10);
+
+        // 🟢 ปุ่มยักษ์อินเตอร์เฟซ NEW CHAT ROOM (กรอบเรืองแสงวิ่วๆ)
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(20, 165, V_WIDTH - 40, 50);
+        ctx.strokeStyle = `rgba(13, 243, 150, ${pulseAlpha})`;
+        ctx.strokeRect(20, 165, V_WIDTH - 40, 50);
+
+        // ลายเส้นสัญลักษณ์แกนปุ่มแชทใหม่
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(V_WIDTH / 2 - 60, 186, 120, 8);
+
+        mapClickHitbox(20, 165, V_WIDTH - 40, 50, () => {
+            currentTab = 'Chats';
+        });
+
+        // บล็อกจำลองแสดงไฟล์คลังข้อมูลออนดีไวซ์
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 230, V_WIDTH - 40, 120);
+        ctx.strokeRect(20, 230, V_WIDTH - 40, 120);
+
+        ctx.fillStyle = '#3a3a3c';
+        ctx.fillRect(35, 250, 180, 8);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(35, 280, V_WIDTH - 70, 6);
+        ctx.fillRect(35, 300, V_WIDTH - 120, 6);
+        ctx.fillRect(35, 320, 190, 6);
+    }
+
+    function drawChatsGpuLayer(pulseAlpha) {
+        // ส่วนหัวหน้าจอแชท
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(24, 100, 160, 12);
+
+        // กล่องเร่งความเร็วประมวลผลส่ง Prompt จำลองคำสั่ง
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = `rgba(13, 243, 150, ${pulseAlpha * 0.4})`;
+        ctx.fillRect(20, 130, V_WIDTH - 40, 90);
+        ctx.strokeRect(20, 130, V_WIDTH - 40, 90);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(40, 155, V_WIDTH - 80, 8);
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(40, 185, 110, 6);
+
+        mapClickHitbox(20, 130, V_WIDTH - 40, 90, () => {
+            // เล่นเสียงแจ้งเตือนความตื่นรู้ผ่านเสียงจำลองเครือข่ายฮาร์ดแวร์เบราว์เซอร์
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance("ระบบออฟไลน์รุ่นโปรทำงานสว่างไสว"));
+            }
+        });
+
+        // แถบข้อความแสดงผลลัพธ์พิกเซลโต้ตอบ
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 235, V_WIDTH - 40, 110);
+        ctx.strokeRect(20, 235, V_WIDTH - 40, 110);
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(36, 255, 90, 6);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(36, 280, V_WIDTH - 72, 5);
+        ctx.fillRect(36, 295, V_WIDTH - 140, 5);
+    }
+
+    function drawProjectsPureGpuLayer() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(24, 100, 130, 12);
+
+        // วาดรายการคาร์ดโปรเจกต์ (Projects Ledger Matrix)
+        const rowsY =;
+        rowsY.forEach((y, i) => {
+            ctx.fillStyle = '#0d0d0e';
+            ctx.strokeStyle = '#1a1a1c';
+            ctx.fillRect(20, y, V_WIDTH - 40, 65);
+            ctx.strokeRect(20, y, V_WIDTH - 40, 65);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(36, y + 18, 160, 8);
+            ctx.fillStyle = '#8e8e93';
+            ctx.fillRect(36, y + 38, 120, 6);
+
+            ctx.fillStyle = 'rgba(13, 243, 150, 0.12)';
+            ctx.fillRect(V_WIDTH - 85, y + 20, 50, 18);
+        });
+    }
+
+    function drawSettingsPureGpuLayer(pulseAlpha) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(24, 100, 140, 12);
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 125, V_WIDTH - 40, 150);
+        ctx.strokeRect(20, 125, V_WIDTH - 40, 150);
+
+        // 1. วาดแถบลายเส้นสไลเดอร์ควบคุม Temperature Context 
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(36, 145, 120, 7);
+        
+        ctx.fillStyle = '#1c1c1e';
+        ctx.fillRect(36, 170, V_WIDTH - 72, 6);
+        // เม็ดปุ่มปรับแต่งสลับพิกัดสไลเดอร์วาดสดพิกเซลตามตัวแปรจริง
+        let thumbX = 36 + (modelTemperature / 2.0) * (V_WIDTH - 72);
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.8 + pulseAlpha * 0.2})`;
+        ctx.beginPath();
