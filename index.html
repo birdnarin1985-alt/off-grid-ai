@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - Ultimate GPU Mesh Core</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        canvas {
+            display: block;
+            background-color: #000000;
+            box-shadow: 0 0 40px rgba(13, 243, 150, 0.12);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gpuMeshEngine"></canvas>
+
+<script>
+    // ========================================================
+    // 🏛️ 1. CPU INITIALIZATION (ขั้นปฏิสนธิระบบ: ปลูกฝังเมล็ดพันธุ์แล้วส่งมอบงาน)
+    // ========================================================
+    const canvas = document.getElementById('gpuMeshEngine');
+    const ctx = canvas.getContext('2d'); // เร่งความเร็วฮาร์ดแวร์ระนาบ 2D Direct Pipeline
+
+    const V_WIDTH = 420;
+    const V_HEIGHT = 740;
+
+    // โครงสร้างข้อมูลสากล (State Ledger)
+    let currentTab = 'Home'; 
+    let modelTemp = 0.7;
+    let selectedQuant = 'Q8'; // Q4, Q8, F16
+    let ollamaBridge = false;
+    let aiOutput = "OFFLINE GPU CORE RUNNING. ZERO CPU OVERHEAD.";
+    let telemetryLogs = ["[BOOT] CPU initialized state boundary.", "[GPU] Shader grid armed via hardware context."];
+
+    // โครงสร้างแผนผังพิกเซลคลิก (Event Coordinate Dictionary Mapping)
+    const activeHitboxes = [];
+
+    // ========================================================
+    // 🎨 2. GPU PIXEL RENDERING MATRIX (รูปขันธ์: ประมวลผลพิกเซลขนาน)
+    // ========================================================
+    function dispatchGpuFrame() {
+        // ถ่ายโอนหน่วยความจำ เคลียร์พิกเซลบนเฟรมเรนเดอร์ GPU
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        activeHitboxes.length = 0; // เคลียร์พอยน์เตอร์พิกเซลสัมผัส
+
+        // --- DRAW HEADER MESH ---
+        ctx.fillStyle = '#0df396'; // สีเขียวเอไอสะท้อนแสง
+        ctx.fillRect(24, 25, 16, 16);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(28, 29, 8, 8);
+        ctx.fillStyle = '#0df396';
+        ctx.fillRect(30, 31, 4, 4);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px -apple-system';
+        ctx.fillText('Off Grid AI', 50, 39);
+
+        // ป้ายสเตต PRO บ่มเพาะด้วยความตื่นรู้
+        ctx.fillStyle = 'rgba(13, 243, 150, 0.1)';
+        ctx.fillRect(24, 52, 130, 18);
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('PRO UNLOCKED CORE', 32, 64);
+
+        ctx.fillStyle = '#ffd60a'; // VIP Crown
+        ctx.font = '16px -apple-system';
+        ctx.fillText('👑', V_WIDTH - 40, 38);
+
+        // --- VIEWPORT ROUTER MAPPING ---
+        const viewRenderMatrix = {
+            'Home': drawHomeGpuLayer,
+            'Chats': drawChatsGpuLayer,
+            'Projects': drawProjectsGpuLayer,
+            'Settings': drawSettingsGpuLayer
+        };
+        if (viewRenderMatrix[currentTab]) {
+            viewRenderMatrix[currentTab]();
+        }
+
+        // --- DIAGNOSTICS TELEMETRY LOGS (ส่วนล่างของผืนผ้าใบ) ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, V_HEIGHT - 195, V_WIDTH - 40, 100);
+        ctx.strokeRect(20, V_HEIGHT - 195, V_WIDTH - 40, 100);
+
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '10px monospace';
+        ctx.fillText('Neural Engine Core Telemetry', 26, V_HEIGHT - 202);
+
+        ctx.fillStyle = '#0df396';
+        let logY = V_HEIGHT - 180;
+        telemetryLogs.slice(-5).forEach(log => {
+            ctx.fillText(log, 30, logY);
+            logY += 16;
+        });
+
+        // --- BOTTOM NAVIGATION BAR MESH ---
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(0, V_HEIGHT - 75, V_WIDTH, 75);
+        ctx.beginPath();
+        ctx.moveTo(0, V_HEIGHT - 75);
+        ctx.lineTo(V_WIDTH, V_HEIGHT - 75);
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.stroke();
+
+        const tabs = [
+            { id: 'Home', icon: '🏠' },
+            { id: 'Chats', icon: '💬' },
+            { id: 'Projects', icon: '📁' },
+            { id: 'Settings', icon: '⚙️' }
+        ];
+        const segWidth = V_WIDTH / tabs.length;
+
+        tabs.forEach((t, i) => {
+            const x = i * segWidth;
+            const isSelected = currentTab === t.id;
+
+            ctx.fillStyle = isSelected ? '#0df396' : '#8e8e93';
+            ctx.font = '20px -apple-system';
+            ctx.fillText(t.icon, x + (segWidth/2) - 10, V_HEIGHT - 42);
+            ctx.font = '9px -apple-system';
+            ctx.fillText(t.id, x + (segWidth/2) - (ctx.measureText(t.id).width / 2), V_HEIGHT - 24);
+
+            // ฝังพิกเซลสัมผัสสำหรับเปลี่ยนหน้าตา (Event Dispatcher Binding)
+            mapClickBox(x, V_HEIGHT - 75, segWidth, 75, () => {
+                currentTab = t.id;
+                pushLog(`[NAV] Routed perspective frame to: ${t.id}`);
+                dispatchGpuFrame();
+            });
+        });
+    }
+
+    // ========================================================
+    // 🎭 3. INDIVIDUAL PERSPECTIVE LAYERS (การเกากราฟิกแต่ละส่วน)
+    // ========================================================
+    function drawHomeGpuLayer() {
+        // ผังโมเดลบิตระนาบขนาน
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 95, V_WIDTH - 40, 60);
+        ctx.strokeRect(20, 95, V_WIDTH - 40, 60);
+
+        ctx.fillStyle = '#0df396';
+        ctx.font = '12px -apple-system';
+        ctx.fillText(`💬 Text Matrix: ${selectedQuant}`, 34, 131);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('🖼️ Vision: Unlocked', 155, 131);
+        ctx.fillText('🔊 Audio Synth: Pro', 285, 131);
+
+        // ปุ่มยักษ์ New Chat Core
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(20, 170, V_WIDTH - 40, 48);
+        ctx.strokeStyle = '#0df396';
+        ctx.strokeRect(20, 170, V_WIDTH - 40, 48);
+        ctx.fillStyle = '#0df396';
+        ctx.font = 'bold 14px -apple-system';
+        ctx.fillText('New Chat (Unlimited Context Sandbox)', V_WIDTH/2 - 115, 199);
+
+        mapClickBox(20, 170, V_WIDTH - 40, 48, () => {
+            currentTab = 'Chats';
+            executeHardwareInference("เปิดมิติห้องสนทนาใหม่");
+            dispatchGpuFrame();
+        });
+
+        // กล่องข้อความตอบกลับล่าสุดบนพิกเซลการ์ด
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 235, V_WIDTH - 40, 120);
+        ctx.strokeRect(20, 235, V_WIDTH - 40, 120);
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '11px -apple-system';
+        ctx.fillText('🤖 สัญญาณอินเฟอเรนซ์ล่าสุด (On-Device):', 34, 260);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px -apple-system';
+        gpuTextWrap(aiOutput, 34, 288, V_WIDTH - 68, 18);
+    }
+
+    function drawChatsGpuLayer() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Chats Engine Layer', 24, 110);
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 135, V_WIDTH - 40, 90);
+        ctx.strokeRect(20, 135, V_WIDTH - 40, 90);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px -apple-system';
+        ctx.fillText('👉 สัมผัสตรงนี้เพื่อส่งสัญญาตรึงบริบทคำสั่ง', 36, 175);
+        ctx.fillStyle = '#0df396';
+        ctx.font = '11px monospace';
+        ctx.fillText(`[CONFIG] Temp: ${modelTemp.toFixed(1)} | Precision: ${selectedQuant}`, 36, 198);
+
+        mapClickBox(20, 135, V_WIDTH - 40, 90, () => {
+            executeHardwareInference("วิเคราะห์ฐานระบบหน่วยประมวลผล");
+            dispatchGpuFrame();
+        });
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.fillRect(20, 245, V_WIDTH - 40, 115);
+        ctx.strokeRect(20, 245, V_WIDTH - 40, 115);
+        ctx.fillStyle = '#0df396';
+        ctx.font = '12px -apple-system';
+        ctx.fillText('🤖 Voice Audio Output:', 34, 270);
+        ctx.fillStyle = '#ffffff';
+        gpuTextWrap(aiOutput, 34, 295, V_WIDTH - 68, 18);
+    }
+
+    function drawProjectsGpuLayer() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Projects Ledger', 24, 110);
+
+        // รายการจำลองการ์ดข้อมูลโปรเจกต์
+        const list = [
+            { t: "📂 Thai Language Processing", f: "14 Files", d: "คลังวิเคราะห์ประโยคและบริบทออฟไลน์" },
+            { t: "📂 Secure Sandbox Core Docs", f: "3 Files", d: "ชุดโครงสร้างความมั่นคงทางข้อมูลประชาชน" }
+        ];
+
+        list.forEach((p, i) => {
+            let y = 135 + (i * 75);
+            ctx.fillStyle = '#0d0d0e';
+            ctx.strokeStyle = '#1a1a1c';
+            ctx.fillRect(20, y, V_WIDTH - 40, 65);
+            ctx.strokeRect(20, y, V_WIDTH - 40, 65);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px -apple-system';
+            ctx.fillText(p.t, 34, y + 25);
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = '12px -apple-system';
+            ctx.fillText(p.d, 34, y + 46);
+
+            ctx.fillStyle = 'rgba(13, 243, 150, 0.08)';
+            ctx.fillRect(V_WIDTH - 95, y + 16, 65, 20);
+            ctx.fillStyle = '#0df396';
+            ctx.font = '10px monospace';
+            ctx.fillText(p.f, V_WIDTH - 82, y + 29);
+        });
+    }
+
+    function drawSettingsGpuLayer() {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px -apple-system';
+        ctx.fillText('Model Parameters', 24, 110);
+
+        ctx.fillStyle = '#0d0d0e';
+        ctx.strokeStyle = '#1a1a1c';
+        ctx.fillRect(20, 130, V_WIDTH - 40, 155);
+        ctx.strokeRect(20, 130, V_WIDTH - 40, 155);
+
+        // Slider ปรับแต่งค่าความสร้างสรรค์พารามิเตอร์ขนาน
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px -apple-system';
+        ctx.fillText('🔥 Temperature Context', 36, 160);
