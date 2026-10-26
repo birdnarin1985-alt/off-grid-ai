@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - Settings UI Emulator</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #0d0d0e;
+            --border-color: #1a1a1c;
+            --accent-color: #0df396; /* สีเขียวมินต์สะท้อนแสง */
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --text-dark: #3a3a3c;
+            --toggle-bg: #1c1c1e;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* กรอบหน้าจอจำลองแอปพลิเคชัน */
+        .app-shell {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 24px 16px 100px 16px; /* เว้นระยะด้านล่างไม่ให้บังแถบเมนู */
+        }
+
+        /* TITLE SETTINGS */
+        h1.page-title {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin: 12px 0 24px 4px;
+        }
+
+        /* APPEARANCE ROW */
+        .appearance-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .appearance-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        /* เซกเมนต์ปุ่มเลือกโหมดสไตล์ iOS (Segmented Control) */
+        .theme-selector {
+            background-color: var(--toggle-bg);
+            padding: 2px;
+            border-radius: 8px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .theme-btn.active {
+            background-color: var(--accent-color);
+            color: #000000;
+        }
+
+        /* LIST GROUP CONTAINER */
+        .settings-list {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* LIST ITEM STYLE */
+        .settings-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item:active {
+            background-color: #151517;
+        }
+
+        .item-icon {
+            font-size: 20px;
+            margin-right: 16px;
+            margin-top: 2px;
+            width: 24px;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+        .item-content {
+            flex: 1;
+            padding-right: 8px;
+        }
+
+        .item-title {
+            font-size: 17px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            letter-spacing: -0.2px;
+        }
+
+        .item-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.35;
+        }
+
+        .item-arrow {
+            color: var(--text-dark);
+            font-size: 18px;
+            align-self: center;
+            font-weight: 300;
+        }
+
+        /* BOTTOM NAVIGATION BAR (เป๊ะตามแบบทั้ง 5 เมนู) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background-color: rgba(13, 13, 14, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            padding: 8px 0 20px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--accent-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    
+    <!-- PAGE TITLE -->
+    <h1 class="page-title">Settings</h1>
+
+    <!-- APPEARANCE SELECTION -->
+    <div class="appearance-card">
+        <div class="appearance-title">Appearance</div>
+        <div class="theme-selector">
+            <button class="theme-btn">📱</button>
+            <button class="theme-btn">☀️</button>
+            <button class="theme-btn active">🌙</button> <!-- เปิดโหมดมืดตามรูปภาพ -->
+        </div>
+    </div>
+
+    <!-- SETTINGS LIST GROUP -->
+    <div class="settings-list">
+        
+        <!-- Model Settings -->
+        <div class="settings-item" onclick="selectMenu('Model Settings')">
+            <div class="item-icon">🎛️</div>
+            <div class="item-content">
+                <div class="item-title">Model Settings</div>
+                <div class="item-desc">System prompt, generation, and performance</div>
+            </div>
+            <div class="item-arrow">›</div>
+        </div>
+
+        <!-- Remote Servers -->
+        <div class="settings-item" onclick="selectMenu('Remote Servers')">
+            <div class="item-icon">📶</div>
+            <div class="item-content">
+                <div class="item-title">Remote Servers</div>
+                <div class="item-desc">Connect to Off Grid AI Desktop, Ollama, LM Studio, and more</div>
+            </div>
+            <div class="item-arrow">›</div>
+        </div>
+
+        <!-- Sync with Pro -->
+        <div class="settings-item" onclick="selectMenu('Sync with Pro')">
+            <div class="item-icon">🔄</div>
+            <div class="item-content">
+                <div class="item-title">Sync with Pro</div>
+                <div class="item-desc">Get Pro to set up encrypted sync across your devices</div>
+            </div>
+            <div class="item-arrow">›</div>
+        </div>
+
+        <!-- Security -->
+        <div class="settings-item" onclick="selectMenu('Security')">
+            <div class="item-icon">🔒</div>
+            <div class="item-content">
+                <div class="item-title">Security</div>
+                <div class="item-desc">Passphrase and app lock</div>
+            </div>
+            <div class="item-arrow">›</div>
+        </div>
+
+        <!-- Device Information -->
+        <div class="settings-item" onclick="selectMenu('Device Information')">
+            <div class="item-icon">📱</div>
+            <div class="item-content">
+                <div class="item-title">Device Information</div>
+                <div class="item-desc">Hardware and compatibility</div>
+            </div>
+            <div class="item-arrow">›</div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION (เมนู Settings สว่างเป็นสีเขียวมินต์) -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="navigateTo('Home')">
+            <div class="nav-icon">🏠</div>
+            <div>Home</div>
+        </div>
+        <div class="nav-item" onclick="navigateTo('Chats')">
+            <div class="nav-icon">💬</div>
+            <div>Chats</div>
+        </div>
+        <div class="nav-item" onclick="navigateTo('Projects')">
+            <div class="nav-icon">📁</div>
+            <div>Projects</div>
+        </div>
+        <div class="nav-item" onclick="navigateTo('Models')">
+            <div class="nav-icon">🎛️</div>
+            <div>Models</div>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">⚙️</div>
+            <div>Settings</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // สเต็ปแจ้งเตือนจำลองการทำงานเบื้องต้นเพื่อความมั่นใจในการคลิก (Zero Debugging)
+    function selectMenu(menuName) {
+        console.log(`[UI Action] Selected menu sub-layer: ${menuName}`);
+        // ในอนาคตสามารถใส่โครงสร้างหน้าต่างย่อย (Modal หรือเปลี่ยน View) ได้ตรงนี้
+    }
+
+    function navigateTo(targetPage) {
+        console.log(`[Navigation] Request layout change to: ${targetPage}`);
+    }
+</script>
+
+</body>
+</html>
