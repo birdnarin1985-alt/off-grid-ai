@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Off Grid AI - Event-Driven Core</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #0d0d0e;
+            --border-color: #1a1a1c;
+            --accent-color: #0df396;
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --text-dark: #3a3a3c;
+            --toggle-bg: #1c1c1e;
+            --ios-danger: #ff453a;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 100px;
+        }
+
+        /* 🚀 GPU Accelerated View Layer (เบาสวิงวิวๆ ด้วย translate3d) */
+        .view-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 24px 16px;
+            opacity: 0;
+            visibility: hidden;
+            /* บังคับใช้ GPU Hardware Acceleration */
+            transform: translate3d(0, 10px, 0);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, opacity;
+        }
+
+        .view-layer.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate3d(0, 0, 0);
+        }
+
+        /* --- COMMON UI ELEMENTS --- */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        /* --- HOME VIEW STYLE --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 600; }
+        .brand-icon {
+            width: 28px; height: 28px; border: 2px solid var(--accent-color); border-radius: 6px; position: relative;
+        }
+        .brand-icon::after {
+            content: ''; position: absolute; top: 6px; left: 6px; right: 6px; bottom: 6px; background-color: var(--accent-color); border-radius: 2px;
+        }
+        .crown-btn {
+            width: 38px; height: 38px; background-color: rgba(13, 243, 150, 0.1); border: 1px solid rgba(13, 243, 150, 0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--accent-color); cursor: pointer;
+        }
+        .models-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 14px; text-transform: uppercase; }
+        .models-grid { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; }
+        .model-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+        .model-icon-row { display: flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 500; }
+        .model-label { font-size: 11px; color: var(--text-muted); }
+        .disabled-item { color: var(--text-dark); }
+        .disabled-item .model-label { color: var(--text-dark); }
+
+        .btn-new-chat {
+            width: 100%; background-color: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 500; cursor: pointer; margin-bottom: 16px;
+        }
+
+        .pro-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+        .pro-desc { font-size: 14px; color: var(--text-muted); line-height: 1.4; margin-bottom: 20px; }
+        .btn-get-pro { width: 100%; background-color: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+        /* RECENT VIEW */
+        .recent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .recent-item { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .recent-left h4 { margin: 0 0 6px 0; font-size: 16px; font-weight: 500; }
+        .recent-left p { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+        /* --- SETTINGS VIEW STYLE --- */
+        h1.page-title { font-size: 32px; font-weight: 600; margin: 12px 0 24px 4px; }
+        .appearance-card { display: flex; justify-content: space-between; align-items: center; }
+        .theme-selector { background-color: var(--toggle-bg); padding: 2px; border-radius: 8px; display: flex; gap: 2px; }
+        .theme-btn { background: transparent; border: none; color: var(--text-muted); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+        .theme-btn.active { background-color: var(--accent-color); color: #000000; }
+        
+        .settings-list { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+        .settings-item { display: flex; align-items: flex-start; padding: 18px 16px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+        .settings-item:last-child { border-bottom: none; }
+        .item-icon { font-size: 20px; margin-right: 16px; width: 24px; text-align: center; }
+        .item-content { flex: 1; }
+        .item-title { font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+        .item-desc { font-size: 14px; color: var(--text-muted); line-height: 1.35; }
+        .item-arrow { color: var(--text-dark); font-size: 18px; align-self: center; }
+
+        /* TELEMETRY LOG BUFFER */
+        .telemetry-box {
+            background-color: #050505; border-radius: 10px; border: 1px dashed var(--border-color); padding: 12px; font-family: monospace; font-size: 11px; color: var(--accent-color); margin-top: 16px; height: 110px; overflow-y: auto;
+        }
+
+        /* --- BOTTOM NAVIGATION BAR --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 50%; transform: translate3d(-50%, 0, 0); width: 100%; max-width: 480px; background-color: rgba(13, 13, 14, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 20px 0; z-index: 100;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; }
+        .nav-item.active { color: var(--accent-color); }
+        .nav-icon { font-size: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    
+    <!-- 🏠 VIEW: HOME -->
+    <div id="view-home" class="view-layer active">
+        <div class="header">
+            <div class="brand"><div class="brand-icon"></div><span>Off Grid AI</span></div>
+            <div class="crown-btn" data-event="PRO_CLICK">👑</div>
+        </div>
+
+        <div class="models-card">
+            <div class="models-header"><span>Models</span><span>▼</span></div>
+            <div class="models-grid">
+                <div class="model-item" data-event="MODEL_SELECT" data-payload="Text">
+                    <div class="model-icon-row" style="color: var(--accent-color);">💬 <span>1</span></div><div class="model-label">Text</div>
+                </div>
+                <div class="model-item" data-event="MODEL_SELECT" data-payload="Image">
+                    <div class="model-icon-row" style="color: var(--accent-color);">🖼️ <span>1</span></div><div class="model-label">Image</div>
+                </div>
+                <div class="model-item disabled-item" data-event="MODEL_SELECT" data-payload="Voice">
+                    <div class="model-icon-row">🔊 <span>0</span></div><div class="model-label">Voice</div>
+                </div>
+                <div class="model-item" data-event="MODEL_SELECT" data-payload="Speech">
+                    <div class="model-icon-row" style="color: var(--accent-color);">🎙️ <span>1</span></div><div class="model-label">Speech</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-new-chat" data-event="NEW_CHAT_CLICK">New Chat</button>
+
+        <div class="pro-card">
+            <div class="pro-title"><span style="color: var(--accent-color);">🔄</span> Sync with Pro</div>
+            <div class="pro-desc">Get Pro to keep chats, projects, files, and copied text available across your devices.</div>
+            <button class="btn-get-pro" data-event="PRO_CLICK">Get Pro</button>
+        </div>
+
+        <div class="recent-header"><span style="font-weight:600;">Recent</span><span class="see-all" data-event="SEE_ALL_CLICK">See all (4)</span></div>
+        <div class="recent-item" data-event="RECENT_ITEM_CLICK">
+            <div class="recent-left">
+                <h4>เช็ก System Status ให้ฉันห...</h4>
+                <p>ผมจะตรวจสอบสถานะของ Mind OS System ROM ใน...</p>
+            </div>
+            <div style="color:var(--text-muted); font-size:12px;">Yesterday ›</div>
