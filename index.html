@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thai Cat System - โยนิโสมนสิการ Error Handling</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --text: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .btn-success { background-color: var(--success); }
+        .btn-warning { background-color: var(--warning); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-dark { background-color: var(--primary); }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .console-box {
+            background-color: #1e1e1e;
+            color: #7cfc00;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 6px;
+            height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .log-entry { margin-bottom: 6px; }
+        .log-error { color: #ff6b6b; font-weight: bold; }
+        .log-warn { color: #fecb2f; }
+        .log-info { color: #4dadf7; }
+        .log-success { color: #51cf66; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            background-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ส่วนควบคุมและจำลองข้อมูล -->
+    <div class="card">
+        <h2>🐈 ระบบสืบสานข้อมูลแมวไทยโบราณ</h2>
+        <p>ทดสอบการประมวลผลข้อมูลและจำลองข้อผิดพลาด (Exception) รูปแบบต่างๆ ภายใต้ระบบดักจับที่ทนทาน</p>
+        
+        <div class="btn-group">
+            <button class="btn-success" onclick="triggerValidCat()">1. ข้อมูลถูกต้อง (วิเชียรมาศ)</button>
+            <button class="btn-warning" onclick="triggerInvalidBreed()">2. ThaiCatException (เปอร์เซีย)</button>
+            <button class="btn-warning" onclick="triggerMissingData()">3. ThaiCatException (ไม่มีสายพันธุ์)</button>
+            <button class="btn-danger" onclick="triggerRuntimeError()">4. Runtime Error (อวิชชาในโค้ด)</button>
+            <button class="btn-dark" onclick="triggerPromiseRejection()">5. Async Promise Crash</button>
+        </div>
+    </div>
+
+    <!-- ส่วนแสดงผล Log สถานะระบบ -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3>🖥️ ระบบติดตามข้อผิดพลาดแบบ Real-time (Global Monitoring Engine)</h3>
+            <button class="btn-dark" style="padding: 6px 12px; font-size: 12px;" onclick="clearLog()">ล้าง Log</button>
+        </div>
+        <div class="console-box" id="consoleLog"></div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 1. DEFINITION OF CUSTOM EXCEPTION (โยนิโสมนสิการ: แยกแยะเหตุแห่งสภาวะ)
+    // ==========================================
+    class ThaiCatException extends Error {
+        constructor(message, causeCode) {
+            super(message);
+            this.name = "ThaiCatException";
+            this.causeCode = causeCode; // ระบุต้นเหตุเฉพาะทาง
+            this.timestamp = new Date().toISOString();
+        }
+    }
+
+    // มาตรฐานข้อมูลที่ถูกต้อง (เสมือนคัมภีร์อ้างอิงเพื่อละอวิชชา)
+    const VALID_THAI_BREEDS = new Set(["วิเชียรมาศ", "ศุภลักษณ์", "สีสวาด", "โกนจา", "ขาวมณี"]);
+
+    // ==========================================
+    // 2. CORE BUSINESS LOGIC (Fail-Fast & Zero Waste Computation)
+    // ==========================================
+    function processThaiCatData(catInfo) {
+        // [โยนิโสมนสิการ - ตรวจสอบต้นเหตุย้อนกลับ] 
+        // สกัดกั้นข้อมูลที่ไม่สมบูรณ์ทันที (Guard Clause) ป้องกัน Unnecessary Computations ด้านล่าง
+        if (!catInfo || typeof catInfo !== 'object') {
+            throw new ThaiCatException("ข้อมูลนำเข้าไม่ได้อยู่ในรูปแบบ Object ที่ถูกต้อง", "INVALID_INPUT_TYPE");
+        }
+
+        if (!catInfo.breed) {
+            throw new ThaiCatException("ตรวจพบอวิชชาในข้อมูล: ไม่พบฟิลด์ระบุสายพันธุ์แมว (Missing 'breed')", "MISSING_BREED_FIELD");
+        }
+
+        // ใช้ Set.has() ในการตรวจสอบความถูกต้อง (Time Complexity O(1) ประสิทธิภาพสูงสุด)
+        if (!VALID_THAI_BREEDS.has(catInfo.breed)) {
+            throw new ThaiCatException(`สายพันธุ์ '${catInfo.breed}' ไม่ใช่แมวไทยโบราณที่ระบบนี้รองรับ`, "UNSUPPORTED_BREED");
+        }
+
+        // ส่วนของการคำนวณที่ซับซ้อนและกินทรัพยากร (Heavy Computation)
+        // จะทำงานก็ต่อเมื่อข้อมูลผ่านการตรวจสอบที่บริสุทธิ์แล้วเท่านั้น
+        sysLog(`[COMPUTE] กำลังคำนวณ DNA และลงทะเบียนระบบปิดของแมวสายพันธุ์: ${catInfo.breed}...`, 'info');
+        
+        return {
+            status: "SUCCESS",
+            message: `ลงทะเบียนแอปพลิเคชันแมวไทย '${catInfo.breed}' สำเร็จ`,
+            timestamp: new Date().toLocaleTimeString()
+        };
+    }
+
+    // ==========================================
+    // 3. GLOBAL ERROR CATCHING ENGINE (ตาข่ายดักจับระดับสูงสุด)
+    // ==========================================
+    
+    // ก) ดักจับข้อผิดพลาด Synchronous ทั้งหมดที่หลุดรอดจาก Try-Catch (ป้องกันแอปพลิเคชันค้าง)
+    window.addEventListener('error', function(event) {
+        sysLog(`[GLOBAL ERROR CATCHER]: เกิดเหตุไม่คาดฝันในไฟล์ระบบ! Line ${event.lineno}: ${event.message}`, 'error');
+        // ป้องกันไม่ให้ Browser พ่น Error สีแดงซ้ำซ้อนใน Developer Tools หากไม่จำเป็น
+        event.preventDefault(); 
+    });
+
+    // ข) ดักจับข้อผิดพลาด Asynchronous (Promise Rejection ที่ไม่มีการ .catch)
+    window.addEventListener('unhandledrejection', function(event) {
+        sysLog(`[GLOBAL ASYNC CATCHER]: ตรวจพบโปรมิสพังกลางคันโดยไม่มีตัวรับ! สาเหตุ: ${event.reason}`, 'error');
+        event.preventDefault();
+    });
+
+    // ==========================================
+    // 4. ACTION TRIGGERS (ระบบทดลองกดส่งข้อมูลเพื่อทดสอบ)
+    // ==========================================
+    
+    // กรณีที่ 1: ข้อมูลสมบูรณ์แบบ
+    function triggerValidCat() {
+        try {
+            const data = { name: "ทองดี", breed: "วิเชียรมาศ", age: 2 };
+            const result = processThaiCatData(data);
+            sysLog(`🟢 ${result.message} [ตอนเวลา ${result.timestamp}]`, 'success');
+        } catch (error) {
+            handleExceptionContext(error);
+        }
+    }
+
+    // กรณีที่ 2: ผิดสายพันธุ์ (เข้าเงื่อนไข ThaiCatException)
+    function triggerInvalidBreed() {
+        try {
+            const data = { name: "คิตตี้", breed: "เปอร์เซีย" };
+            processThaiCatData(data);
+        } catch (error) {
+            handleExceptionContext(error);
+        }
+    }
+
+    // กรณีที่ 3: ข้อมูลขาดหาย (เข้าเงื่อนไข ThaiCatException)
+    function triggerMissingData() {
+        try {
+            const data = { name: "มืดมน" }; // ไม่มีฟิลด์ breed
+            processThaiCatData(data);
+        } catch (error) {
+            handleExceptionContext(error);
+        }
+    }
+
+    // กรณีที่ 4: เกิดข้อผิดพลาดของระบบโค้ด (เช่น เรียกใช้ตัวแปรที่ไม่ได้ประกาศ)
+    function triggerRuntimeError() {
+        try {
+            // เกิดขึ้นจากความประมาทหรือความไม่รู้ของโปรแกรมเมอร์ (อวิชชาแท้จริง)
+            // เรียกใช้ฟังก์ชันที่ไม่มีอยู่จริงเพื่อบังคับให้เกิด ReferenceError
+            executeNonExistentFunction(); 
+        } catch (error) {
+            handleExceptionContext(error);
+        }
+    }
+
+    // กรณีที่ 5: เกิดข้อผิดพลาดในฟังก์ชัน Async/Promise
+    function triggerPromiseRejection() {
+        sysLog("[ASYNC] กำลังยิง Request ปลอมข้ามเครือข่าย...", "info");
+        new Promise((resolve, reject) => {
+            setTimeout(() => {
+                reject("เครือข่ายฐานข้อมูลแมวขัดข้อง (Timeout 5000ms)");
+            }, 500);
+        });
+    }
+
+    // ==========================================
+    // 5. EXCEPTION HANDLING ARCHITECTURE (ตัวแยกแยะและบำบัดข้อผิดพลาด)
+    // ==========================================
+    function handleExceptionContext(error) {
+        if (error instanceof ThaiCatException) {
+            // ดักจับเฉพาะเจาะจงระดับ App Domain (รู้เหตุ-รู้ผล)
+            sysLog(`[⚠️ ThaiCatException โดเมนแอปพลิเคชัน]: \n   -> ข้อความ: ${error.message} \n   -> รหัสเหตุ: ${error.causeCode}`, 'warn');
+            // ตรงนี้สามารถใส่ระบบ Fallback หรือคืนค่า Default UI ให้ผู้ใช้ได้ทันทีโดยระบบไม่ล่ม
+        } else if (error instanceof ReferenceError) {
+            sysLog(`[🚫 System ReferenceError]: ตรวจพบสัญกรณ์โค้ดอ้างอิงผิดพลาด! โปรดตรวจทานโค้ดต้นทาง: ${error.message}`, 'error');
+        } else if (error instanceof TypeError) {
+            sysLog(`[🚫 System TypeError]: ตรวจพบการแปลงชนิดข้อมูลผิดพลาด: ${error.message}`, 'error');
+        } else {
